@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/Ibuki-Y/go-echo-clean/model"
 	"github.com/Ibuki-Y/go-echo-clean/repository"
+	"github.com/Ibuki-Y/go-echo-clean/validator"
 )
 
 type ITaskUsecase interface {
@@ -15,10 +16,11 @@ type ITaskUsecase interface {
 
 type taskUsecase struct {
 	tr repository.ITaskRepository
+	tv validator.ITaskValidator
 }
 
-func NewTaskUsecase(tr repository.ITaskRepository) ITaskUsecase {
-	return &taskUsecase{tr}
+func NewTaskUsecase(tr repository.ITaskRepository, tv validator.ITaskValidator) ITaskUsecase {
+	return &taskUsecase{tr, tv}
 }
 
 func (t *taskUsecase) GetAllTasks(userID uint) ([]model.TaskResponse, error) {
@@ -58,6 +60,10 @@ func (t *taskUsecase) GetTaskByID(userID, taskID uint) (model.TaskResponse, erro
 }
 
 func (t *taskUsecase) CreateTask(task model.Task) (model.TaskResponse, error) {
+	if err := t.tv.TaskValidate(task); err != nil {
+		return model.TaskResponse{}, err
+	}
+
 	if err := t.tr.CreateTask(&task); err != nil {
 		return model.TaskResponse{}, err
 	}
@@ -73,6 +79,10 @@ func (t *taskUsecase) CreateTask(task model.Task) (model.TaskResponse, error) {
 }
 
 func (t *taskUsecase) UpdateTask(task model.Task, userID, taskID uint) (model.TaskResponse, error) {
+	if err := t.tv.TaskValidate(task); err != nil {
+		return model.TaskResponse{}, err
+	}
+
 	if err := t.tr.UpdateTask(&task, userID, taskID); err != nil {
 		return model.TaskResponse{}, err
 	}
